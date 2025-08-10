@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="2de0a4f7-ac7b-42db-99ef-fab0cddf7a65" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Job_app_ms_archi.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/companyms/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/companyms/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/companyms/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/companyms/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/companyms/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/companyms/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/companyms/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/companyms/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/jobms/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/jobms/.gitattributes" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/jobms/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/jobms/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/jobms/Dockerfile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/jobms/mvnw" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/jobms/mvnw.cmd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/jobms/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/jobms/src/main/java/com/vishwa/jobms/JobmsApplication.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/jobms/src/main/java/com/vishwa/jobms/job/Job.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/jobms/src/main/java/com/vishwa/jobms/job/JobController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/jobms/src/main/java/com/vishwa/jobms/job/JobRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/jobms/src/main/java/com/vishwa/jobms/job/JobService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/jobms/src/main/java/com/vishwa/jobms/job/impl/JobServiceImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/jobms/src/main/resources/application.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/jobms/src/test/java/com/vishwa/jobms/JobmsApplicationTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/jobms/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/src/main/java/com/vishwa/jobms/JobmsApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/jobms/src/main/java/com/vishwa/jobms/JobmsApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/src/main/java/com/vishwa/jobms/job/JobController.java" beforeDir="false" afterPath="$PROJECT_DIR$/jobms/src/main/java/com/vishwa/jobms/job/JobController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/src/main/java/com/vishwa/jobms/job/JobService.java" beforeDir="false" afterPath="$PROJECT_DIR$/jobms/src/main/java/com/vishwa/jobms/job/JobService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/src/main/java/com/vishwa/jobms/job/impl/JobServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/jobms/src/main/java/com/vishwa/jobms/job/impl/JobServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/jobms/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/jobms/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/reviewms/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/reviewms/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/reviewms/.gitattributes" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/reviewms/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/reviewms/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/reviewms/Dockerfile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/reviewms/mvnw" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/reviewms/mvnw.cmd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/reviewms/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/reviewms/src/main/java/com/vishwa/reviewms/ReviewmsApplication.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/reviewms/src/main/java/com/vishwa/reviewms/review/Review.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/reviewms/src/main/java/com/vishwa/reviewms/review/ReviewController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/reviewms/src/main/java/com/vishwa/reviewms/review/ReviewRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/reviewms/src/main/java/com/vishwa/reviewms/review/ReviewService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/reviewms/src/main/java/com/vishwa/reviewms/review/impl/ReviewServiceImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/reviewms/src/main/resources/application.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/reviewms/src/test/java/com/vishwa/reviewms/ReviewmsApplicationTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reviewms/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/reviewms/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service-reg/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/service-reg/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/service-reg/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/service-reg/src/main/resources/application.properties" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Dockerfile" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 6
+}</component>
+  <component name="ProjectId" id="30sGGnfqMh9bvdrRN7OYPu7gLhh" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "dart.analysis.tool.window.visible": "false",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "C:/Users/vishw/Job/Projects/Job_app_ms_archi_zipkins",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.2"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\vishw\Job\Projects\Job_app_ms_archi" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration default="true" type="JetRunConfigurationType">
+      <module name="Job_app_ms_archi" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <module name="Job_app_ms_archi" />
+      <option name="filePath" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="2de0a4f7-ac7b-42db-99ef-fab0cddf7a65" name="Changes" comment="" />
+      <created>1754408774972</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1754408774972</updated>
+    </task>
+    <servers />
+  </component>
+</project>
