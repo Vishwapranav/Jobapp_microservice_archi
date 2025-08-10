@@ -1,5 +1,6 @@
 package com.vishwa.jobms.job;
 
+import com.vishwa.jobms.job.dto.JobDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,12 +15,12 @@ public class JobController {
     private final JobService jobService;  // Constructor injection but lombok takes care if we use final keyword
 
     @GetMapping
-    public ResponseEntity<List<Job>> getAllJobs() {
+    public ResponseEntity<List<JobDTO>> getAllJobs() {
         return ResponseEntity.ok(jobService.findAll());
     }
 
     @GetMapping("/{jobId}") // Changed path variable name to jobId
-    public ResponseEntity<Job> getJobById(@PathVariable Long jobId) { // Changed parameter name to jobId
+    public ResponseEntity<JobDTO> getJobById(@PathVariable Long jobId) { // Changed parameter name to jobId
         // Use the correct jobId in the service call
         return jobService.getJobById(jobId) != null
                 ? ResponseEntity.ok(jobService.getJobById(jobId))

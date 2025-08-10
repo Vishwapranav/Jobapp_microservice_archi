@@ -1,38 +1,119 @@
-version: '3.8'
+version: "3.9"
 
 services:
+  service-reg:
+    build:
+      context: ../service-reg
+      dockerfile: Dockerfile
+    container_name: service-reg
+    ports:
+      - "8761:8761"
+    networks:
+      - microservices-net
+
   postgres:
-    image: postgres:15
-    container_name: postgres_jobapp
+    image: postgres:13
+    container_name: postgres
     environment:
-      POSTGRES_DB: jobapp
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: rYlI&144
+      # These credentials match your application.properties
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=rYlI&144
+      - POSTGRES_DB=jobapp
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d jobapp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
-      - jobapp-network
+      - microservices-net
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - ./postgres-data:/var/lib/postgresql/data
 
-  jobapp:
-    build: .
-    container_name: jobapp
-    ports:
-      - "8085:8085"
+  companyms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: companyms
     depends_on:
-      - postgres
+      service-reg:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      zipkin:
+        condition: service_started
+    ports:
+      - "8082:8082"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/jobapp
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: rYlI&144
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_PROFILES_ACTIVE: docker
+      - EUREKA_SERVER=http://service-reg:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/jobapp
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=rYlI&144
+      # This is the corrected environment variable for Zipkin
+      # Make sure this is not overridden by a hardcoded value in your application.properties!
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411
     networks:
-      - jobapp-network
+      - microservices-net
+
+  jobms:
+    build:
+      context: ../jobms
+      dockerfile: Dockerfile
+    container_name: jobms
+    depends_on:
+      service-reg:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      zipkin:
+        condition: service_started
+    ports:
+      - "8081:8081"
+    environment:
+      - EUREKA_SERVER=http://service-reg:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/jobapp
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=rYlI&144
+      # This is the corrected environment variable for Zipkin
+      # Make sure this is not overridden by a hardcoded value in your application.properties!
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411
+    networks:
+      - microservices-net
+
+  reviewms:
+    build:
+      context: ../reviewms
+      dockerfile: Dockerfile
+    container_name: reviewms
+    depends_on:
+      service-reg:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      zipkin:
+        condition: service_started
+    ports:
+      - "8083:8083"
+    environment:
+      - EUREKA_SERVER=http://service-reg:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/jobapp
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=rYlI&144
+      # This is the corrected environment variable for Zipkin
+      # Make sure this is not overridden by a hardcoded value in your application.properties!
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411
+    networks:
+      - microservices-net
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - microservices-net
 
 networks:
-  jobapp-network:
-
-volumes:
-  postgres-data:
+  microservices-net:
+    driver: bridge

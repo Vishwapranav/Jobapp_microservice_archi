@@ -1,15 +1,11 @@
-# Use a base image with Java installed
-FROM openjdk:21-jdk-slim
-
-# Set the working directory inside the container
+FROM maven:3.9.6-eclipse-temurin-21 AS builder
 WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-# Copy the packaged JAR file into the container
-# The assumption is that you've already run 'mvn package' to create the JAR
-COPY target/*.jar app.jar
-
-# Expose the port your application will run on
+FROM openjdk:21-jdk-slim
+WORKDIR /app
+COPY --from=builder /app/target/*.jar app.jar
 EXPOSE 8083
-
-# Define the command to run your application when the container starts
 ENTRYPOINT ["java", "-jar", "app.jar"]
