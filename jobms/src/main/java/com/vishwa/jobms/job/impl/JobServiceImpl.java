@@ -1,118 +1,129 @@
 package com.vishwa.jobms.job.impl;
 
-
 import com.vishwa.jobms.job.Job;
 import com.vishwa.jobms.job.JobRepository;
 import com.vishwa.jobms.job.JobService;
-import com.vishwa.jobms.job.clients.CompanyClient;
-import com.vishwa.jobms.job.clients.ReviewClient;
 import com.vishwa.jobms.job.dto.JobDTO;
-import com.vishwa.jobms.job.external.Company;
-import com.vishwa.jobms.job.external.Review;
 import com.vishwa.jobms.job.mapper.JobMapper;
-import jakarta.ws.rs.HttpMethod;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.ResponseEntity;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class JobServiceImpl implements JobService {
 
-    private final JobRepository jobRepository; // Added final keyword for consistency
+    private final JobRepository jobRepository;
 
-    @Autowired
-    RestTemplate restTemplate;
+    @Override
+    public JobDTO createJob(JobDTO jobDTO) {
+        Job job = JobMapper.toEntity(jobDTO);
+        job.setActive(true);
 
-    private CompanyClient companyClient;
-    private ReviewClient reviewClient;
+        Job saved = jobRepository.save(job);
+        return JobMapper.toDto(saved);
+    }
 
+    @Override
+    public Optional<JobDTO> updateJob(Long id, JobDTO jobDTO, String recruiterUsername) {
+        return jobRepository.findByIdAndRecruiterUsername(id, recruiterUsername)
+                .map(job -> {
+                    job.setTitle(jobDTO.getTitle());
+                    job.setDescription(jobDTO.getDescription());
+                    job.setMinSalary(JobMapper.convertDoubleToBigDecimal(jobDTO.getMinSalary()));
+                    job.setMaxSalary(JobMapper.convertDoubleToBigDecimal(jobDTO.getMaxSalary()));
+                    job.setLocation(jobDTO.getLocation());
+                    jobRepository.save(job);
+                    return JobMapper.toDto(job);
+                });
+    }
 
-    // Modified constructor to inject CompanyRepository
-    public JobServiceImpl(JobRepository jobRepository, CompanyClient companyClient, ReviewClient reviewClient) {
-        this.jobRepository = jobRepository;
-        this.companyClient = companyClient;
-        this.reviewClient = reviewClient;
+    @Override
+    public Optional<JobDTO> updateJobAdmin(Long id, JobDTO jobDTO) {
+        return jobRepository.findById(id)
+                .map(job -> {
+                    job.setTitle(jobDTO.getTitle());
+                    job.setDescription(jobDTO.getDescription());
+                    job.setMinSalary(JobMapper.convertDoubleToBigDecimal(jobDTO.getMinSalary()));
+                    job.setMaxSalary(JobMapper.convertDoubleToBigDecimal(jobDTO.getMaxSalary()));
+                    job.setLocation(jobDTO.getLocation());
+                    job.setRecruiterUsername(jobDTO.getRecruiterUsername());
+                    jobRepository.save(job);
+                    return JobMapper.toDto(job);
+                });
+    }
+
+    @Override
+    public boolean deleteJob(Long id) {
+        if (!jobRepository.existsById(id)) return false;
+        jobRepository.deleteById(id);
+        return true;
+    }
+
+    @Override
+    public boolean deleteJobByRecruiter(Long id, String recruiterUsername) {
+        return jobRepository.findByIdAndRecruiterUsername(id, recruiterUsername)
+                .map(job -> {
+                    job.setActive(false);
+                    jobRepository.save(job);
+                    return true;
+                }).orElse(false);
+    }
+
+    @Override
+    public Optional<JobDTO> findById(Long id) {
+        return jobRepository.findByIdAndActiveTrue(id)
+                .map(JobMapper::toDto);
     }
 
     @Override
     public List<JobDTO> findAll() {
-        List<Job> jobs = jobRepository.findAll();
-        return jobs.stream().map(this::convertToDto).collect(Collectors.toList());
-    }
-    private JobDTO convertToDto(Job job) {
-        Long companyId = job.getCompanyId();
-        Company company = null;
-        List<Review> reviews = List.of(); // default to empty list
-
-        if (companyId != null) {
-            try {
-                System.out.println("📡 Fetching company for ID: " + companyId);
-                company = companyClient.getCompanyById(companyId);
-                reviews = reviewClient.getReviews(companyId);
-            } catch (Exception e) {
-                System.err.println("⚠️ Error fetching company or reviews for ID " + companyId + ": " + e.getMessage());
-            }
-        } else {
-            System.out.println("⚠️ companyId is null for job ID: " + job.getId());
-        }
-
-        return JobMapper.mapToJobWithCompanyDTO(job, company, reviews);
-    }
-
-
-
-
-
-    // Changed parameter name from 'id' to 'jobId' for consistency with Job entity
-    @Override // Added @Override as it implements JobService.getJobById
-    public JobDTO getJobById(Long jobId){
-        Job job =  jobRepository.findById(jobId).orElse(null);
-        return convertToDto(job);
+        return jobRepository.findByActiveTrue(Pageable.unpaged())
+                .stream()
+                .map(JobMapper::toDto)
+                .toList();
     }
 
     @Override
-    public void createJob(Job job) {
-        // Validate if the associated company exists
-        jobRepository.save(job);
+    public Page<Job> findAll(Pageable pageable) {
+        return jobRepository.findByActiveTrue(pageable);
     }
 
-    // Changed parameter name from 'id' to 'jobId' for consistency
     @Override
-    public boolean deleteJobById(Long jobId) {
-        try {
-            jobRepository.deleteById(jobId);
-            return true;
-        } catch (Exception e) {
-            // Log the exception for debugging purposes
-            System.err.println("Error deleting job with ID " + jobId + ": " + e.getMessage());
-            return false;
-        }
+    public Page<Job> findAllIncludingInactive(Pageable pageable) {
+        return jobRepository.findAll(pageable);
     }
 
-    // Changed parameter name from 'id' to 'jobId' for consistency
     @Override
-    public boolean updateJob(Long jobId, Job updatedJob) {
-        Optional<Job> jobOptional = jobRepository.findById(jobId);
+    public Page<Job> searchJobs(String query, Pageable pageable) {
+        return jobRepository.searchJobs(query == null ? null : query.toLowerCase(), pageable);
+    }
 
-        if (jobOptional.isPresent()) {
-            Job job = jobOptional.get();
-            job.setTitle(updatedJob.getTitle());
-            job.setDescription(updatedJob.getDescription());
-            job.setMaxSalary(updatedJob.getMaxSalary());
-            job.setMinSalary(updatedJob.getMinSalary());
-            job.setLocation(updatedJob.getLocation());
+    @Override
+    public Page<Job> findByCompanyId(Long companyId, Pageable pageable) {
+        return jobRepository.findByCompanyIdAndActiveTrue(companyId, pageable);
+    }
 
+    @Override
+    public Page<Job> findByRecruiter(String recruiterUsername, Pageable pageable) {
+        return jobRepository.findByRecruiterUsernameAndActiveTrue(recruiterUsername, pageable);
+    }
 
-
-            jobRepository.save(job);
-            return true;
-        }
-        return false;
+    @Override
+    public boolean updateJobStatus(Long id, String status) {
+        return jobRepository.findById(id)
+                .map(job -> {
+                    job.setActive("active".equalsIgnoreCase(status));
+                    jobRepository.save(job);
+                    return true;
+                }).orElse(false);
     }
 }

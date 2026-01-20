@@ -1,25 +1,62 @@
 package com.vishwa.jobms.job;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-@Entity                //JPA notation to mark the class as JPA entity to store in db table. JPA will automatically map this class to table
-@Data                  // Generates getters, setters, toString, equals, and hashCode
-@NoArgsConstructor     // Generates a no-argument constructor
-@AllArgsConstructor    // Generates a constructor with all fields as arguments
-//@Table(name = "job_table") //tell a new name other than the class'
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "jobs")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Job {
-    @Id         // Marks as the primary key for the class/table
-    @GeneratedValue(strategy = GenerationType.IDENTITY)   //Auto creates ids
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @NotBlank
+    @Size(max = 100)
     private String title;
+
+    @NotBlank
+    @Column(columnDefinition = "TEXT")
     private String description;
-    private String minSalary;
-    private String maxSalary;
+
+    @DecimalMin("0.0")
+    private BigDecimal minSalary;
+
+    @DecimalMin("0.0")
+    private BigDecimal maxSalary;
+
+    @NotBlank
     private String location;
 
+    @NotNull
+    @Column(name = "company_id")
     private Long companyId;
 
+    @NotBlank
+    @Column(name = "recruiter_username")
+    private String recruiterUsername;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean active = true;
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+
+    @Version
+    private Long version;
 }

@@ -1,19 +1,35 @@
 package com.vishwa.reviewms.review;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 public interface ReviewService {
 
-    List<Review> findAll(Long companyId);
+    Page<Review> getAllReviews(Pageable pageable);
+
+    Page<Review> getCompanyReviews(Long companyId, Pageable pageable);
+
+    Page<Review> searchReviews(String query, Pageable pageable);
+
+    List<Review> getReviewsByCompanyId(Long companyId);
+
+    Page<Review> getReviewsByUsername(String username, Pageable pageable);
 
     boolean addReview(Long companyId, Review review);
 
-    // Parameter uses reviewId
     Review getReview(Long reviewId);
 
-    // Parameters use reviewId
+    boolean updateReviewByUser(Long reviewId, Review review, String username);
+
+    boolean deleteReviewByUser(Long reviewId, String username);
+
     boolean updateReview(Long reviewId, Review review);
 
-    // Parameters use reviewId
     boolean deleteReview(Long reviewId);
+
+    boolean moderateReview(Long reviewId, boolean approved);
+
+    Page<Review> getPendingReviews(Pageable pageable);
 }

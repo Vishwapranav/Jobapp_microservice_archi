@@ -1,117 +1,167 @@
 package com.vishwa.reviewms.review.impl;
 
-
-import com.vishwa.reviewms.review.Review;
-import com.vishwa.reviewms.review.ReviewRepository;
-import com.vishwa.reviewms.review.ReviewService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import com.vishwa.reviewms.client.CompanyClient;
+import com.vishwa.reviewms.dto.ReviewDTO;
+import com.vishwa.reviewms.review.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.*;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.logging.Logger;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@CacheConfig(cacheNames = {"allReviews", "companyReviews"})
 public class ReviewServiceImpl implements ReviewService {
 
-    // Inject ReviewRepository for database operations on Review entities
     private final ReviewRepository reviewRepository;
+    private final CompanyClient companyClient;
 
-    // Inject CompanyService to fetch Company entities, crucial for linking reviews
+    /* ================== READ ================== */
 
-    // Constructor for Dependency Injection: Spring automatically provides instances
-    // of ReviewRepository and CompanyService when creating ReviewServiceImpl
-    public ReviewServiceImpl(ReviewRepository reviewRepository) {
-        this.reviewRepository = reviewRepository;
+    @Override
+    @Cacheable(value = "allReviews", key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()")
+    public Page<Review> getAllReviews(Pageable pageable) {
+        return reviewRepository.findAll(pageable);
     }
 
-    /**
-     * Retrieves all reviews associated with a specific company.
-     * Leverages Spring Data JPA's derived query method `findByCompany_CompanyId`.
-     *
-     * @param companyId The ID of the company whose reviews are to be retrieved.
-     * @return A list of Review objects belonging to the specified company.
-     */
     @Override
-    public List<Review> findAll(Long companyId) {
-        // This method call is correct based on the ReviewRepository Canvas
+    @Cacheable(value = "companyReviews", key = "#companyId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()")
+    public Page<Review> getCompanyReviews(Long companyId, Pageable pageable) {
+        return reviewRepository.findByCompanyIdAndApprovedTrue(companyId, pageable);
+    }
+
+    @Override
+    public List<Review> getReviewsByCompanyId(Long companyId) {
         return reviewRepository.findByCompanyId(companyId);
     }
 
-    /**
-     * Adds a new review to a specified company.
-     * This method ensures the review is correctly linked to the company identified by companyId
-     * from the URL path, overriding any potentially conflicting company ID in the request body.
-     *
-     * @param companyId The ID of the company to which the review will be added (from URL path).
-     * @param review The Review object containing the new review's details (from request body).
-     * @return true if the review was successfully added, false if the company does not exist.
-     */
     @Override
-    public boolean addReview(Long companyId, Review review) {
-        if (companyId != null) {
-            review.setCompanyId(companyId);
-            reviewRepository.save(review);
-            return true;
-        }
-        return false;
+    public Page<Review> getReviewsByUsername(String username, Pageable pageable) {
+        return reviewRepository.findByUsername(username, pageable);
     }
 
-    /**
-     * Finds a specific review by its ID within the context of a particular company.
-     * This version directly queries the repository for a review matching both companyId and reviewId,
-     * which is more efficient than fetching all reviews for a company and then filtering in memory.
-     *
-     * @param reviewId The ID of the review to find.
-     * @return The Review object if found, otherwise null.
-     */
+    @Override
+    public Page<Review> searchReviews(String query, Pageable pageable) {
+        if (!StringUtils.hasText(query)) return Page.empty(pageable);
+        return reviewRepository.searchReviews(query, pageable);
+    }
+
+    @Override
+    public Page<Review> getPendingReviews(Pageable pageable) {
+        return reviewRepository.findByApprovedFalse(pageable);
+    }
+
+    /* ================== ADD ================== */
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"allReviews", "companyReviews"}, allEntries = true)
+    public boolean addReview(Long companyId, Review review) {
+
+        if (reviewRepository.existsByCompanyIdAndUsername(companyId, review.getUsername())) {
+            return false; // prevent duplicate
+        }
+
+        companyClient.getCompany(companyId);
+
+        review.setCompanyId(companyId);
+        review.setApproved(false);
+
+        Review saved = reviewRepository.save(review);
+
+        ReviewDTO dto = ReviewDTO.builder()
+                .id(saved.getReviewId())
+                .title(saved.getTitle())
+                .description(saved.getDescription())
+                .rating(saved.getRating())
+                .companyId(saved.getCompanyId())
+                .build();
+
+        companyClient.updateCompanyReviewStats(companyId, dto);
+
+        return true;
+    }
+
+    /* ================== UPDATE ================== */
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"allReviews", "companyReviews"}, allEntries = true)
+    public boolean updateReviewByUser(Long reviewId, Review review, String username) {
+        return reviewRepository.findById(reviewId)
+                .filter(r -> r.getUsername().equals(username))
+                .map(r -> {
+                    r.setTitle(review.getTitle());
+                    r.setDescription(review.getDescription());
+                    r.setRating(review.getRating());
+                    r.setApproved(false); // re-moderate
+                    reviewRepository.save(r);
+                    return true;
+                }).orElse(false);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"allReviews", "companyReviews"}, allEntries = true)
+    public boolean updateReview(Long reviewId, Review review) {
+        return reviewRepository.findById(reviewId)
+                .map(r -> {
+                    r.setTitle(review.getTitle());
+                    r.setDescription(review.getDescription());
+                    r.setRating(review.getRating());
+                    r.setApproved(false);
+                    reviewRepository.save(r);
+                    return true;
+                }).orElse(false);
+    }
+
+    /* ================== DELETE ================== */
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"allReviews", "companyReviews"}, allEntries = true)
+    public boolean deleteReviewByUser(Long reviewId, String username) {
+        return reviewRepository.findById(reviewId)
+                .filter(r -> r.getUsername().equals(username))
+                .map(r -> {
+                    reviewRepository.delete(r);
+                    return true;
+                }).orElse(false);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"allReviews", "companyReviews"}, allEntries = true)
+    public boolean deleteReview(Long reviewId) {
+        if (!reviewRepository.existsById(reviewId)) return false;
+        reviewRepository.deleteById(reviewId);
+        return true;
+    }
+
+    /* ================== MODERATE ================== */
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"allReviews", "companyReviews"}, allEntries = true)
+    public boolean moderateReview(Long reviewId, boolean approved) {
+        return reviewRepository.findById(reviewId)
+                .map(r -> {
+                    r.setApproved(approved);
+                    reviewRepository.saveAndFlush(r); // flush to DB immediately
+                    return true;
+                }).orElse(false);
+    }
+
+    /* ================== SINGLE REVIEW ================== */
+
     @Override
     public Review getReview(Long reviewId) {
         return reviewRepository.findById(reviewId).orElse(null);
-    }
-
-    /**
-     * Updates an existing review for a specific company.
-     * It ensures the review belongs to the specified company before updating.
-     *
-     * @param reviewId The ID of the review to update.
-     * @return true if the review was found and updated, false otherwise.
-     */
-    @Override
-    public boolean updateReview(Long reviewId, Review updatedReview) {
-        Review review = reviewRepository.findById(reviewId).orElse(null);
-        if (review!=null) {
-            review.setName(updatedReview.getName());
-            review.setDescription(updatedReview.getDescription());
-            review.setRating(updatedReview.getRating());
-//            review.setCompanyId(updatedReview.getCompanyId());
-
-            // 3. Save the updated review. Since it's a managed entity, save() performs an UPDATE.
-            reviewRepository.save(review);
-            return true; // Indicate successful update
-        }
-        return false; // Review not found for the given companyId and reviewId
-    }
-
-    /**
-     * Deletes a specific review for a particular company.
-     * It ensures the review belongs to the specified company before deleting.
-     *
-     * @param reviewId The ID of the review to delete.
-     * @return true if the review was found and deleted, false otherwise.
-     */
-    @Override
-    public boolean deleteReview(Long reviewId) {
-        Review review = reviewRepository.findById(reviewId).orElse(null);
-
-        if (review!=null) {
-
-            reviewRepository.delete(review);
-            return true; // Indicate successful deletion
-        }
-        return false; // Review not found for the given companyId and reviewId
     }
 }

@@ -1,57 +1,117 @@
 package com.vishwa.reviewms.review;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.*;
+import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("reviews")
+@RequestMapping("/api/v1/reviews")
 public class ReviewController {
 
     private final ReviewService reviewService;
-
 
     public ReviewController(ReviewService reviewService) {
         this.reviewService = reviewService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<Review>> getAllReviews(@RequestParam Long companyId){
-        return new ResponseEntity<>(reviewService.findAll(companyId), HttpStatus.OK);
+    private Pageable pageable(int page, int size, String[] sort) {
+        Sort.Direction dir = sort.length > 1 && sort[1].equalsIgnoreCase("desc")
+                ? Sort.Direction.DESC : Sort.Direction.ASC;
+        return PageRequest.of(page, size, Sort.by(dir, sort[0]));
     }
 
-    @PostMapping
-    public ResponseEntity<String> createReview(@RequestParam Long companyId, @RequestBody Review review){
-        if (reviewService.addReview(companyId, review)){
-            return new ResponseEntity<>("Review added successfully", HttpStatus.OK);
+    /* ===== PUBLIC ===== */
+    @GetMapping("/public/company/{companyId}")
+    public Page<Review> companyReviews(
+            @PathVariable Long companyId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "reviewId,desc") String[] sort) {
+
+        return reviewService.getCompanyReviews(companyId, pageable(page, size, sort));
+    }
+
+    @GetMapping("/public/search")
+    public Page<Review> search(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "reviewId,desc") String[] sort) {
+
+        return reviewService.searchReviews(query, pageable(page, size, sort));
+    }
+
+    /* ===== USER ===== */
+    @PostMapping("/company/{companyId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<String> create(
+            @PathVariable Long companyId,
+            @RequestBody Review review) {
+
+        review.setUsername(SecurityContextHolder.getContext().getAuthentication().getName());
+        if (review.getTitle() == null || review.getTitle().isBlank()) {
+            return ResponseEntity.badRequest().body("Title is required");
         }
-        return new ResponseEntity<>("Review not added", HttpStatus.NOT_FOUND);
+
+        return reviewService.addReview(companyId, review)
+                ? ResponseEntity.status(HttpStatus.CREATED).body("Review added")
+                : ResponseEntity.badRequest().body("Failed to add review");
     }
 
-    @GetMapping("/{reviewId}")
-    public ResponseEntity<Review> getReview(
-            @PathVariable Long reviewId) {
+    @PutMapping("/{reviewId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> update(
+            @PathVariable Long reviewId,
+            @RequestBody Review review) {
 
-        return new ResponseEntity<>(reviewService.getReview(reviewId), HttpStatus.OK);
+        String user = SecurityContextHolder.getContext().getAuthentication().getName();
+        return reviewService.updateReviewByUser(reviewId, review, user)
+                ? ResponseEntity.ok("Updated")
+                : ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
 
-    @PutMapping("/{reviewId}") // Path variable uses reviewId
-    public ResponseEntity<String> updateReview(
-                                               @PathVariable Long reviewId,
-                                               @RequestBody Review review){
-        // Parameters use reviewId
-        if (reviewService.updateReview(reviewId, review))
-            return new ResponseEntity<>("Review updated successfully", HttpStatus.OK);
-        return new ResponseEntity<>("Review not updated", HttpStatus.NOT_FOUND);
+    @DeleteMapping("/{reviewId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> delete(@PathVariable Long reviewId) {
+        String user = SecurityContextHolder.getContext().getAuthentication().getName();
+        return reviewService.deleteReviewByUser(reviewId, user)
+                ? ResponseEntity.ok("Deleted")
+                : ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
 
-    @DeleteMapping("/{reviewId}") // Path variable uses reviewId
-    public ResponseEntity<String> deleteReview(@PathVariable Long reviewId){ // Parameters use reviewId
-        if (reviewService.deleteReview(reviewId)){
-            return new ResponseEntity<>("Review deleted successfully", HttpStatus.OK);
-        }
-        return new ResponseEntity<>("Review not deleted", HttpStatus.NOT_FOUND);
+    /* ===== ADMIN ===== */
+    @GetMapping("/admin/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Page<Review> pending(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "reviewId,desc") String[] sort) {
+
+        return reviewService.getPendingReviews(pageable(page, size, sort));
+    }
+
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Page<Review> allReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "reviewId,desc") String[] sort) {
+
+        return reviewService.getAllReviews(pageable(page, size, sort));
+    }
+
+    @PutMapping("/admin/{reviewId}/moderate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> moderate(
+            @PathVariable Long reviewId,
+            @RequestParam boolean approved) {
+
+        return reviewService.moderateReview(reviewId, approved)
+                ? ResponseEntity.ok("Moderated")
+                : ResponseEntity.notFound().build();
     }
 }
