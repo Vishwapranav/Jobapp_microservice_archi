@@ -1,0 +1,159 @@
+version: "3.9"
+
+services:
+
+  service-reg:
+    build:
+      context: ./service-reg
+      dockerfile: Dockerfile
+    container_name: service-reg
+    ports:
+      - "8761:8761"
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - microservices-net
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9411/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  companyms:
+    build:
+      context: ./companyms
+      dockerfile: Dockerfile
+    container_name: companyms
+    depends_on:
+      service-reg:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+    environment:
+      - EUREKA_SERVER=http://service-reg:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411
+    networks:
+      - microservices-net
+    restart: on-failure
+
+  jobms:
+    build:
+      context: ./jobms
+      dockerfile: Dockerfile
+    container_name: jobms
+    depends_on:
+      service-reg:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      - EUREKA_SERVER=http://service-reg:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+    networks:
+      - microservices-net
+    restart: on-failure
+
+  reviewms:
+    build:
+      context: ./reviewms
+      dockerfile: Dockerfile
+    container_name: reviewms
+    depends_on:
+      service-reg:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    environment:
+      - EUREKA_SERVER=http://service-reg:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411
+    networks:
+      - microservices-net
+    restart: on-failure
+
+  authms:
+    build:
+      context: ./authms
+      dockerfile: Dockerfile
+    container_name: authms
+    depends_on:
+      service-reg:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+    environment:
+      - EUREKA_SERVER=http://service-reg:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    networks:
+      - microservices-net
+    restart: on-failure
+
+networks:
+  microservices-net:
+    driver: bridge
+
+volumes:
+  postgres_data:

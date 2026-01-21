@@ -1,37 +1,45 @@
-HELP.md
-target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+# ==================== SECURITY - NEVER COMMIT THESE ====================
+.env
+.env.*
+!.env.example
+**/application-local.properties
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+# Secret files
+secrets/
+*.key
+*.pem
+*.p12
+*.jks
 
-### IntelliJ IDEA ###
-.idea
-*.iws
+# ==================== IDE ====================
+.idea/
 *.iml
+*.iws
 *.ipr
-
-
-.docker-compose.yml
-.Dockerfile
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
 .vscode/
+.DS_Store
+
+# ==================== BUILD ====================
+target/
+build/
+*.class
+*.jar
+*.war
+*.ear
+
+# ==================== LOGS ====================
+logs/
+*.log
+
+# ==================== DATABASE ====================
+*.db
+*.sqlite
+
+# ==================== DOCKER ====================
+docker-compose.override.yml
+
+# ==================== TEMPORARY FILES ====================
+*.tmp
+*.bak
+*.swp
+*~
